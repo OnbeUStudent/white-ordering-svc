@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace Dii_OrderingSvc.Controllers
 {
@@ -14,16 +15,19 @@ namespace Dii_OrderingSvc.Controllers
     public class MoviesController : ControllerBase
     {
         private readonly OrderingSvcContext _context;
+        private readonly ILogger<MoviesController> logger;
 
-        public MoviesController(OrderingSvcContext context)
+        public MoviesController(OrderingSvcContext context, ILogger<MoviesController> logger)
         {
             _context = context;
+            this.logger = logger;
         }
 
         // GET: api/Movies
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
+            logger.LogInformation("Executing Get Movies");
             return await _context.Movies
                 .Include(movie => movie.MovieMetadata)
                 .ToListAsync();
