@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Dii_OrderingSvc.Clients;
+using Dii_OrderingSvc.Assets;
 
 namespace Dii_OrderingSvc.Controllers
 {
@@ -14,11 +16,14 @@ namespace Dii_OrderingSvc.Controllers
     {
         private readonly OrderingSvcContext _context;
         private readonly ILogger<BookingsController> logger;
+        private readonly MovieCatalogSvcClient movieCatalogSvcClient;
 
-        public BookingsController(OrderingSvcContext context, ILogger<BookingsController> logger)
+        public BookingsController(OrderingSvcContext context, ILogger<BookingsController> logger,
+            MovieCatalogSvcClient movieCatalogSvcClient)
         {
             _context = context;
             this.logger = logger;
+            this.movieCatalogSvcClient = movieCatalogSvcClient;
         }
 
         // GET: api/Bookings
@@ -65,13 +70,16 @@ namespace Dii_OrderingSvc.Controllers
             {
                 return NotFound();
             }
+            logger.LogInformation(OrderingLogMessageTemplates.LOG_booking_Message, theaterCode, booking);
 
             // We can't use .Include(booking => booking.Movies) because of circular references so we
             // do the following to include the movie info in our response.
-            var movie = await _context.Movies
-                .AsNoTracking()
-                .Include(movie => movie.MovieMetadata)
-                .SingleAsync(movie => movie.MovieId == booking.MovieId);
+            var movie = await movieCatalogSvcClient.GetMovie(booking.MovieId.ToString());
+            //await _context.Movies
+            //.AsNoTracking()
+            //.Include(movie => movie.MovieMetadata)
+            //.SingleAsync(movie => movie.MovieId == booking.MovieId);
+            logger.LogInformation(OrderingLogMessageTemplates.RETRIEVED_movie_FROM_MOVIECATALOGSVC, movie);
             movie.Bookings = null;
             booking.Movie = movie;
 
